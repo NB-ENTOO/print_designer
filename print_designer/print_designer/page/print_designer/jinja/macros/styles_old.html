@@ -81,19 +81,21 @@
     .flexDirectionColumn .baseSpanTag .valueSpanTag {
         display: block;
     }
-    /* https://github.com/wkhtmltopdf/wkhtmltopdf/issues/1522 */
+    /* Float-based layout: more reliable than flex for page-break-inside:avoid in wkhtmltopdf */
     .relative-row {
-        display: -webkit-box;
-        display: -webkit-flex;
-        display: flex;
+        display: block;
         border-width: 0 !important;
-        flex: auto;
+    }
+    /* clearfix: expand to contain floated columns without overflow:hidden (which clips content) */
+    .relative-row::after {
+        content: "";
+        display: table;
+        clear: both;
     }
     .relative-column {
+        float: left;
         border-width: 0px !important;
         border-color: transparent !important;
-        flex-direction: column;
-        flex: auto;
     }
     * {
         -webkit-box-sizing: border-box;

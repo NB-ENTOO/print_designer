@@ -4,9 +4,11 @@
         {%- set heightType = "auto" if element.get("isDynamicHeight", False) else "fixed" -%}
     {%- endif -%}
     <table style="position:{%- if heightType != 'fixed' -%}relative{% else %}absolute{%- endif -%}; {%- if heightType == 'fixed' -%}top: {%- else -%}margin-top: {%- endif -%}{{ element.startY }}px; left:{{ element.startX }}px; width:{{ element.width }}px;{%- if heightType != 'fixed' and heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px;{%- endif -%} max-width:{{ element.width }}px;" class="table-container printTable {{ element.classes | join(' ') }}">
-            <thead>
+            <tbody>
+            {# Header row lives in tbody so it is never orphaned at a page bottom.
+               page-break-after:avoid keeps it glued to the first data row. #}
             {% if element.columns %}
-                <tr>
+                <tr style="page-break-after: avoid; break-after: avoid;">
             {% for column in element.columns%}
                     <th style="{% if column.width %}width: {{column.width}}%; max-width: {{column.width}}%;{%endif%} {{convert_css(element.headerStyle)}}border-top-style: solid !important;border-bottom-style: solid !important;{%if loop.first%}border-left-style: solid !important;{%elif loop.last%}border-right-style: solid !important;{%endif%}{%- if column.applyStyleToHeader and column.style -%}{{convert_css(column.style)}}{%- endif -%}">
                     {{ _(column.label) }}
@@ -14,8 +16,6 @@
             {% endfor %}
                 </tr>
             {% endif %}
-            </thead>
-            <tbody>
             {% if element.columns %}
                 {% if not element.table or not element.table.fieldname %}
                     <tr><td colspan="{{ element.columns | length }}" style="color: red; text-align: center; padding: 10px;">Error: Table field is not configured. Please select a child table field in the print designer.</td></tr>

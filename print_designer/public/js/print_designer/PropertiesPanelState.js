@@ -1415,7 +1415,7 @@ export const createPropertiesPanel = () => {
 		],
 	});
 	MainStore.propertiesPanel.push({
-		title: "Avoid Page Break",
+		title: "Page Break",
 		sectionCondtional: () => {
 			if (MainStore.mode !== "editing") {
 				return false;
@@ -1436,12 +1436,12 @@ export const createPropertiesPanel = () => {
 		},
 		fields: [
 				{
-					label: "Avoid Page Break",
+					label: "Avoid Page Break Inside",
 					name: "breakInside",
 					isLabelled: true,
 					labelDirection: "column",
 					condtional: null,
-					parentBorderBottom: true,
+					parentBorderBottom: false,
 					parentBorderTop: true,
 					frappeControl: (ref, name) => {
 						const MainStore = useMainStore();
@@ -1456,6 +1456,70 @@ export const createPropertiesPanel = () => {
 							],
 							reactiveObject: () => MainStore.getCurrentElementsValues[0],
 							propertyName: "breakInside",
+							isStyle: true,
+							isFontStyle: false,
+							formatValue: (object, property, isStyle) => {
+								if (object && object[property]) {
+									return object[property];
+								}
+								return "auto";
+							},
+						});
+					},
+				},
+				{
+					label: "Page Break Before",
+					name: "breakBefore",
+					isLabelled: true,
+					labelDirection: "column",
+					condtional: null,
+					parentBorderBottom: false,
+					parentBorderTop: false,
+					frappeControl: (ref, name) => {
+						const MainStore = useMainStore();
+						makeFeild({
+							name: name,
+							ref: ref,
+							fieldtype: "Select",
+							requiredData: [MainStore.getCurrentElementsValues[0]],
+							options: () => [
+								{ label: "Always (new page)", value: "always" },
+								{ label: "Auto", value: "auto" },
+							],
+							reactiveObject: () => MainStore.getCurrentElementsValues[0],
+							propertyName: "breakBefore",
+							isStyle: true,
+							isFontStyle: false,
+							formatValue: (object, property, isStyle) => {
+								if (object && object[property]) {
+									return object[property];
+								}
+								return "auto";
+							},
+						});
+					},
+				},
+				{
+					label: "Page Break After",
+					name: "breakAfter",
+					isLabelled: true,
+					labelDirection: "column",
+					condtional: null,
+					parentBorderBottom: true,
+					parentBorderTop: false,
+					frappeControl: (ref, name) => {
+						const MainStore = useMainStore();
+						makeFeild({
+							name: name,
+							ref: ref,
+							fieldtype: "Select",
+							requiredData: [MainStore.getCurrentElementsValues[0]],
+							options: () => [
+								{ label: "Always (new page)", value: "always" },
+								{ label: "Auto", value: "auto" },
+							],
+							reactiveObject: () => MainStore.getCurrentElementsValues[0],
+							propertyName: "breakAfter",
 							isStyle: true,
 							isFontStyle: false,
 							formatValue: (object, property, isStyle) => {

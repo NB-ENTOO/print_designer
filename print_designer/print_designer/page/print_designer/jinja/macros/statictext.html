@@ -2,7 +2,7 @@
 {% macro statictext(element, send_to_jinja, heightType) -%}
 <div style="position:{%- if heightType != 'fixed' -%}relative{% else %}absolute{%- endif -%}; {%- if heightType == 'fixed'  -%}top: {%- else -%}margin-top: {%- endif -%}{{ element.startY }}px; left:{{ element.startX }}px;{% if element.isFixedSize %}width:{{ element.width }}px;{%- if heightType == 'fixed' -%}height:{{ element.height }}px; {%- endif -%}{% else %}width:fit-content; height:fit-content; max-width: {{ (settings.page.width - settings.page.marginLeft - settings.page.marginRight - element.startX) + 2 }}px; white-space:nowrap; {%endif%}" class="
     {{ element.classes | join(' ') }}">
-    <p style="{% if element.isFixedSize %}width:{{ element.width }}px; {%- if heightType == 'fixed' -%}height:{{ element.height }}px; {%- endif -%}{% else %}width:fit-content; height:fit-content; max-width: {{ (settings.page.width - settings.page.marginLeft - settings.page.marginRight - element.startX ) + 2 }}px; white-space:nowrap;{%endif%} {{convert_css(element.style)}}"
+    <p style="{% if element.isFixedSize %}width:{{ element.width }}px; {%- if heightType == 'fixed' -%}height:{{ element.height }}px; {%- endif -%}{% else %}width:fit-content; height:fit-content; max-width: {{ (settings.page.width - settings.page.marginLeft - settings.page.marginRight - element.startX ) + 2 }}px; white-space:nowrap;{%endif%} {{convert_css(element.style)}}{%- if heightType == 'fixed' -%}overflow:visible!important;{%- endif -%}"
         class="staticText {{ element.classes | join(' ') }}">
         {% if element.parseJinja %}
            {{ render_user_text(element.content, doc, {}, send_to_jinja).get("message", "") }}

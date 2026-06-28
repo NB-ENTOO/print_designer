@@ -870,18 +870,27 @@ export const useElementStore = defineStore("ElementStore", {
 			} else {
 				wrapper.heightType = "fixed";
 			}
-			if (
-				(childElements.length == 1 && childElements[0].style.breakInside == "avoid") ||
-				childElements.some(
-					(el) =>
-						["row", "column"].includes(el.layoutType) &&
-						el.style.breakInside == "avoid"
-				)
-			) {
-				wrapper.breakInside = "avoid";
-			}
-		},
-		createColumnWrapperElement(dimension, currentColumn, parent) {
+		if (
+			(childElements.length == 1 && childElements[0].style.breakInside == "avoid") ||
+			childElements.some(
+				(el) =>
+					["row", "column"].includes(el.layoutType) &&
+					el.style.breakInside == "avoid"
+			)
+		) {
+			wrapper.breakInside = "avoid";
+		}
+		// breakBefore/breakAfter: read from wrapper's own style (set by UI on the section directly)
+		const breakBefore = wrapper.style?.breakBefore || childElements[0]?.style?.breakBefore;
+		if (breakBefore && breakBefore !== "auto") {
+			wrapper.breakBefore = breakBefore;
+		}
+		const breakAfter = wrapper.style?.breakAfter || childElements[0]?.style?.breakAfter;
+		if (breakAfter && breakAfter !== "auto") {
+			wrapper.breakAfter = breakAfter;
+		}
+	},
+	createColumnWrapperElement(dimension, currentColumn, parent) {
 			const coordinates = {
 				startY: dimension.top,
 				pageY: dimension.top,
@@ -929,16 +938,24 @@ export const useElementStore = defineStore("ElementStore", {
 			} else {
 				wrapper.heightType = "fixed";
 			}
-			if (
-				(childElements.length == 1 && childElements[0].style.breakInside == "avoid") ||
-				childElements.some(
-					(el) => ["row", "column"].includes(el.layoutType) && el.style.breakInside == "avoid"
-				)
-			) {
-				wrapper.breakInside = "avoid";
-			}
-		},
-		async printFormatCopyOnOlderSchema(objectToSave) {
+		if (
+			(childElements.length == 1 && childElements[0].style.breakInside == "avoid") ||
+			childElements.some(
+				(el) => ["row", "column"].includes(el.layoutType) && el.style.breakInside == "avoid"
+			)
+		) {
+			wrapper.breakInside = "avoid";
+		}
+		const breakBefore = wrapper.style?.breakBefore || childElements[0]?.style?.breakBefore;
+		if (breakBefore && breakBefore !== "auto") {
+			wrapper.breakBefore = breakBefore;
+		}
+		const breakAfter = wrapper.style?.breakAfter || childElements[0]?.style?.breakAfter;
+		if (breakAfter && breakAfter !== "auto") {
+			wrapper.breakAfter = breakAfter;
+		}
+	},
+	async printFormatCopyOnOlderSchema(objectToSave) {
 			// TODO: have better message.
 			let message = __(
 				"<b>This Print Format was created from older version of Print Designer.</b>"

@@ -95,6 +95,11 @@
         flex-direction: column;
         flex: auto;
     }
+    /* Prevent Chrome PDF engine from repeating <thead> as table-header-group on every page,
+       which causes the header row to render twice when a table spans multiple pages. */
+    thead {
+        display: table-row-group;
+    }
     * {
         -webkit-box-sizing: border-box;
     }

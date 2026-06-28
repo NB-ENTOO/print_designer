@@ -6,7 +6,7 @@
         {%- set heightType = "auto" if element.get("isDynamicHeight", False) else "fixed" -%}
     {%- endif -%}
     {%- set pageBreak = element.get("breakInside", "auto") -%}
-    <div style="position:relative;  top: 0px; {%- if element.rectangleContainer -%}margin-top:{{element.startY}}px; margin-left:{{element.startX}}px;{%- endif -%} width:{{ element.width }}px; {%- if heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px; {%- endif -%}  break-inside: {{ pageBreak }}; {{convert_css(element.style)}}"
+    <div style="position:relative;  top: 0px; {%- if element.rectangleContainer -%}margin-top:{{element.startY}}px; margin-left:{{element.startX}}px;{%- endif -%} width:{{ element.width }}px; {%- if heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px; {%- endif -%} page-break-inside: {{ pageBreak }}; break-inside: {{ pageBreak }}; {{convert_css(element.style)}}"
     class="rectangle {{ element.classes | join(' ') }}">
         {% if element.childrens %}
             {% for object in element.childrens %}
@@ -27,8 +27,10 @@
     {%- if settings.get("schema_version") == "1.1.0" -%}
         {%- set heightType = "auto" if element.get("isDynamicHeight", False) else "fixed" -%}
     {%- endif -%}
-    {%- set pageBreak = element.get("breakInside", "auto") -%}
-    <div style="position:relative; left:{{ element.startX }}px; {%- if heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px; {%- endif -%} break-inside: {{ pageBreak }}; {{convert_css(element.style)}}"
+    {%- set pageBreak = element.get("breakInside", element.get("style", {}).get("breakInside", "auto")) -%}
+    {%- set pageBreakBefore = element.get("breakBefore", element.get("style", {}).get("breakBefore", "auto")) -%}
+    {%- set pageBreakAfter = element.get("breakAfter", element.get("style", {}).get("breakAfter", "auto")) -%}
+    <div style="position:relative; left:{{ element.startX }}px; {%- if heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px; {%- endif -%} page-break-before: {{ pageBreakBefore }}; break-before: {{ pageBreakBefore }}; page-break-inside: {{ pageBreak }}; break-inside: {{ pageBreak }}; page-break-after: {{ pageBreakAfter }}; break-after: {{ pageBreakAfter }}; {{convert_css(element.style)}}"
     class="rectangle relative-row {{ element.classes | join(' ') }}">
         {% if element.childrens %}
             {% for object in element.childrens %}
