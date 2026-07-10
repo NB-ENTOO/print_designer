@@ -145,12 +145,12 @@ def convert_css(css_obj):
 	string_css = ""
 	if css_obj:
 		for item in css_obj.items():
-			string_css += (
-				"".join(["-" + i.lower() if i.isupper() else i for i in item[0]]).lstrip("-")
-				+ ":"
-				+ str(item[1] if item[1] != "" or item[0] != "backgroundColor" else "transparent")
-				+ "!important;"
-			)
+			prop = "".join(["-" + i.lower() if i.isupper() else i for i in item[0]]).lstrip("-")
+			value = str(item[1] if item[1] != "" or item[0] != "backgroundColor" else "transparent")
+			string_css += prop + ":" + value + "!important;"
+			# wkhtmltopdf (old WebKit) only understands the legacy page-break-* aliases
+			if item[0] in ("breakInside", "breakBefore", "breakAfter"):
+				string_css += "page-" + prop + ":" + value + "!important;"
 	string_css += "user-select: all;"
 	return string_css
 

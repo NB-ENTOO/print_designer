@@ -1436,7 +1436,7 @@ export const createPropertiesPanel = () => {
 		},
 		fields: [
 				{
-					label: "Avoid Page Break Inside",
+					label: "Avoid Page Break",
 					name: "breakInside",
 					isLabelled: true,
 					labelDirection: "column",
@@ -1454,9 +1454,11 @@ export const createPropertiesPanel = () => {
 								{ label: "Yes", value: "avoid" },
 								{ label: "No", value: "auto" },
 							],
-							reactiveObject: () => MainStore.getCurrentElementsValues[0],
+							// always read/write the element's main style, never
+							// labelStyle/headerStyle picked by styleEditMode
+							reactiveObject: () => MainStore.getCurrentElementsValues[0]?.style,
 							propertyName: "breakInside",
-							isStyle: true,
+							isStyle: false,
 							isFontStyle: false,
 							formatValue: (object, property, isStyle) => {
 								if (object && object[property]) {
@@ -1468,39 +1470,7 @@ export const createPropertiesPanel = () => {
 					},
 				},
 				{
-					label: "Page Break Before",
-					name: "breakBefore",
-					isLabelled: true,
-					labelDirection: "column",
-					condtional: null,
-					parentBorderBottom: false,
-					parentBorderTop: false,
-					frappeControl: (ref, name) => {
-						const MainStore = useMainStore();
-						makeFeild({
-							name: name,
-							ref: ref,
-							fieldtype: "Select",
-							requiredData: [MainStore.getCurrentElementsValues[0]],
-							options: () => [
-								{ label: "Always (new page)", value: "always" },
-								{ label: "Auto", value: "auto" },
-							],
-							reactiveObject: () => MainStore.getCurrentElementsValues[0],
-							propertyName: "breakBefore",
-							isStyle: true,
-							isFontStyle: false,
-							formatValue: (object, property, isStyle) => {
-								if (object && object[property]) {
-									return object[property];
-								}
-								return "auto";
-							},
-						});
-					},
-				},
-				{
-					label: "Page Break After",
+					label: "New Page After",
 					name: "breakAfter",
 					isLabelled: true,
 					labelDirection: "column",
@@ -1515,12 +1485,12 @@ export const createPropertiesPanel = () => {
 							fieldtype: "Select",
 							requiredData: [MainStore.getCurrentElementsValues[0]],
 							options: () => [
-								{ label: "Always (new page)", value: "always" },
-								{ label: "Auto", value: "auto" },
+								{ label: "Yes", value: "always" },
+								{ label: "No", value: "auto" },
 							],
-							reactiveObject: () => MainStore.getCurrentElementsValues[0],
+							reactiveObject: () => MainStore.getCurrentElementsValues[0]?.style,
 							propertyName: "breakAfter",
-							isStyle: true,
+							isStyle: false,
 							isFontStyle: false,
 							formatValue: (object, property, isStyle) => {
 								if (object && object[property]) {
