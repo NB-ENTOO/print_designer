@@ -38,9 +38,13 @@ def before_install():
 
 
 def after_install():
-	create_custom_fields(CUSTOM_FIELDS, ignore_validate=True)
+	sync_custom_fields()
 	on_print_designer_install()
 	setup_chromium()
+
+
+def sync_custom_fields():
+	create_custom_fields(CUSTOM_FIELDS, ignore_validate=True)
 
 
 def after_app_install(app):

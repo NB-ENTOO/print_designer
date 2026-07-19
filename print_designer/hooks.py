@@ -73,6 +73,10 @@ jinja = {
 before_install = "print_designer.install.before_install"
 after_install = "print_designer.install.after_install"
 after_app_install = "print_designer.install.after_app_install"
+after_migrate = [
+	"print_designer.install.sync_custom_fields",
+	"print_designer.client_scripts.quotation_warranty.sync_quotation_warranty_client_script",
+]
 
 # Uninstallation
 # ------------

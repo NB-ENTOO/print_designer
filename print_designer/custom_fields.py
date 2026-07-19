@@ -1,4 +1,13 @@
 CUSTOM_FIELDS = {
+	"User": [
+		{
+			"fieldname": "custom_signature",
+			"fieldtype": "Attach Image",
+			"insert_after": "mobile_no",
+			"label": "Signature",
+			"description": "Upload your signature for quotations and sales documents.",
+		},
+	],
 	"Print Format": [
 		{
 			"default": "0",
