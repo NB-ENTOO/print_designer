@@ -97,6 +97,18 @@
         border-width: 0px !important;
         border-color: transparent !important;
     }
+    /* Frappe's standard.css sets `table td div { page-break-inside: avoid }`; when such a div is
+       taller than the remaining page, wkhtmltopdf stretches the row with empty space instead. */
+    .printTable td div {
+        page-break-inside: auto !important;
+    }
+    .printTable thead.pd-repeat-header {
+        display: table-header-group !important;
+    }
+    /* standard.css maps tfoot to table-header-group, which would draw it at the top */
+    .printTable tfoot.pd-continued-footer {
+        display: table-footer-group !important;
+    }
     * {
         -webkit-box-sizing: border-box;
     }

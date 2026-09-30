@@ -3,10 +3,15 @@
     {%- if settings.get("schema_version") == "1.1.0" -%}
         {%- set heightType = "auto" if element.get("isDynamicHeight", False) else "fixed" -%}
     {%- endif -%}
+    {#- wkhtmltopdf repeats thead/tfoot on every page the table spans: the header gives each page a
+        proper top edge and the footer marks where the table continues. -#}
+    {%- set repeatOnPages = heightType != 'fixed' and pdf_generator != 'chrome' and element.columns -%}
+    {%- set continuedBorderColor = (element.style or {}).get('borderColor') or '#000000' -%}
+    {%- set continuedHeight = 16 -%}
     <table style="position:{%- if heightType != 'fixed' -%}relative{% else %}absolute{%- endif -%}; {%- if heightType == 'fixed' -%}top: {%- else -%}margin-top: {%- endif -%}{{ element.startY }}px; left:{{ element.startX }}px; width:{{ element.width }}px;{%- if heightType != 'fixed' and heightType != 'auto' -%}{%- if heightType == 'auto-min-height' -%}min-{%- endif -%}height:{{ element.height }}px;{%- endif -%} max-width:{{ element.width }}px;" class="table-container printTable {{ element.classes | join(' ') }}">
-            <tbody>
-            {# Header row lives in tbody so it is never orphaned at a page bottom.
-               page-break-after:avoid keeps it glued to the first data row. #}
+            {% if repeatOnPages %}<thead class="pd-repeat-header">{% else %}<tbody>{% endif %}
+            {# Without a repeating thead the header row lives in tbody so it is never orphaned at a
+               page bottom; page-break-after:avoid keeps it glued to the first data row. #}
             {% if element.columns %}
                 <tr style="page-break-after: avoid; break-after: avoid;">
             {% for column in element.columns%}
@@ -16,26 +21,49 @@
             {% endfor %}
                 </tr>
             {% endif %}
+            {% if repeatOnPages %}
+            </thead>
+            <tfoot class="pd-continued-footer">
+                <tr>
+                    <td colspan="{{ element.columns | length }}" style="height:{{ continuedHeight }}px !important; line-height:{{ continuedHeight }}px !important; padding:0 4px !important; font-size:9px !important; font-style:italic !important; text-align:right !important; background-color:transparent !important; border-style:none !important; border-top:1px solid {{ continuedBorderColor }} !important;">
+                        {{ _("Continued on next page") }}
+                    </td>
+                </tr>
+            </tfoot>
+            <tbody>
+            {% endif %}
             {% if element.columns %}
                 {% if not element.table or not element.table.fieldname %}
                     <tr><td colspan="{{ element.columns | length }}" style="color: red; text-align: center; padding: 10px;">Error: Table field is not configured. Please select a child table field in the print designer.</td></tr>
                 {% else %}
                     {% for row in doc.get(element.table.fieldname) or [] %}
+                        {% set isLastRow = loop.last %}
+                        {% set cells = [] %}
+                        {% for column in element.columns %}
+                            {% set cell_html %}{% if column is mapping %}{% for field in column.dynamicContent %}{{ span_tag(field, element, row, send_to_jinja) }}{% endfor %}{% endif %}{% endset %}
+                            {% set _ = cells.append(cell_html) %}
+                        {% endfor %}
+                        {# Long cells are split into continuation rows so wkhtmltopdf can break between them #}
+                        {% set sub_rows = split_table_row_cells(cells) %}
+                        {% for sub_row in sub_rows %}
+                            {% set isFirstPart = loop.first %}
+                            {% set isLastPart = loop.last %}
                         <tr>
-                            {% set isLastRow = loop.last %}
-                        {% for column in element.columns%}
-                            <td style="{{convert_css(element.style)}}{%if row.idx % 2 == 0 %}{{convert_css(element.altStyle)}}{%endif%}{%if isLastRow%}border-bottom-style: solid !important;{%endif%}{%if loop.first%}border-left-style: solid !important;{%elif loop.last%}border-right-style: solid !important;{%endif%}{%- if column.style -%}{{convert_css(column.style)}}{%- endif -%}">
-                            {% if column is mapping %}
-                                {% for field in column.dynamicContent%}
-                                    {{ span_tag(field, element, row, send_to_jinja) }}
-                                {% endfor %}
-                            {% endif %}
+                        {% for column in element.columns %}
+                            <td style="{{convert_css(element.style)}}{%if row.idx % 2 == 0 %}{{convert_css(element.altStyle)}}{%endif%}{%if isLastRow and isLastPart%}border-bottom-style: solid !important;{%endif%}{%if loop.first%}border-left-style: solid !important;{%elif loop.last%}border-right-style: solid !important;{%endif%}{%- if column.style -%}{{convert_css(column.style)}}{%- endif -%}{%- if not isFirstPart -%}border-top-style: none !important;padding-top: 0 !important;{%- endif -%}{%- if not isLastPart -%}border-bottom-style: none !important;padding-bottom: 0 !important;{%- endif -%}">
+                            {{ sub_row[loop.index0] or "" }}
                             </td>
                         {% endfor %}
-                    </tr>
+                        </tr>
+                        {% endfor %}
                     {% endfor %}
                 {% endif %}
             {% endif %}
             </tbody>
     </table>
+    {%- if repeatOnPages %}
+    {#- The footer is also drawn once after the last row; this strip paints over that copy
+        (leaving the table's own bottom border) so it only shows at page breaks. -#}
+    <div class="pd-continued-cover" style="position:relative; left:{{ element.startX }}px; width:{{ element.width }}px; height:{{ continuedHeight }}px; margin-top:-{{ continuedHeight }}px; background-color:#ffffff;"></div>
+    {%- endif %}
 {%- endmacro %}

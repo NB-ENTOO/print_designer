@@ -155,6 +155,120 @@ def convert_css(css_obj):
 	return string_css
 
 
+# wkhtmltopdf never starts a table row mid-page if the whole row fits on the next page, so a tall
+# row jumps to the next page and leaves a large gap. Rows whose longest cell has at least this many
+# block pieces are rendered as a main row plus continuation rows so the content can flow across pages.
+MIN_PIECES_TO_SPLIT_ROW = 12
+
+_BLOCK_TAGS = frozenset(
+	{
+		"address", "article", "aside", "blockquote", "dd", "div", "dl", "dt", "fieldset", "figure",
+		"footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "li", "main", "nav",
+		"ol", "p", "pre", "section", "table", "ul",
+	}
+)
+_ATOMIC_TAGS = frozenset(
+	{"blockquote", "dd", "dt", "figure", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "li", "p", "pre", "table"}
+)
+
+
+def _has_block(node):
+	from bs4 import Tag
+
+	return isinstance(node, Tag) and (node.name in _BLOCK_TAGS or node.find(_BLOCK_TAGS) is not None)
+
+
+def _is_blank(node):
+	from bs4 import Comment, NavigableString
+
+	return isinstance(node, Comment) or (isinstance(node, NavigableString) and not node.strip())
+
+
+def _split_children(node):
+	"""Return (html, li_index) pieces: runs of inline siblings and fragments of block children."""
+	pieces, run = [], []
+	li_index = 0
+
+	def flush():
+		if any(not _is_blank(n) for n in run):
+			pieces.append(("".join(str(n) for n in run), li_index))
+		run.clear()
+
+	for child in node.children:
+		if _has_block(child):
+			flush()
+			pieces.extend((fragment, li_index) for fragment in _fragment(child))
+			if child.name == "li":
+				li_index += 1
+		else:
+			run.append(child)
+	flush()
+	return pieces
+
+
+def _fragment(node):
+	"""Split a tag into stacked HTML pieces, each wrapped in a copy of the tag's own element."""
+	from bs4 import BeautifulSoup
+
+	if node.name in _ATOMIC_TAGS or node.find(_BLOCK_TAGS) is None:
+		return [str(node)]
+
+	pieces = _split_children(node)
+	fragments = []
+	for i, (inner_html, li_index) in enumerate(pieces):
+		attrs = {k: list(v) if isinstance(v, list) else v for k, v in node.attrs.items()}
+		shell = BeautifulSoup("", "html.parser").new_tag(node.name, attrs=attrs)
+		style = ""
+		if i > 0:
+			style += "margin-top:0!important;padding-top:0!important;border-top-width:0!important;"
+		if i < len(pieces) - 1:
+			style += "margin-bottom:0!important;padding-bottom:0!important;border-bottom-width:0!important;"
+		if style:
+			shell["style"] = (shell.get("style", "").strip().rstrip(";") + ";" + style).lstrip(";")
+		if node.name == "ol" and li_index:
+			try:
+				start = int(node.get("start", 1))
+			except (TypeError, ValueError):
+				start = 1
+			shell["start"] = str(start + li_index)
+		closing = f"</{node.name}>"
+		open_tag = str(shell)[: -len(closing)]
+		fragments.append(open_tag + inner_html + closing)
+	return fragments
+
+
+def split_table_row_cells(cells, min_pieces=MIN_PIECES_TO_SPLIT_ROW):
+	"""
+	Takes the rendered HTML of each cell in a table row and returns a list of sub-rows (each a list
+	of cell HTML, None for empty cells). The first sub-row holds every cell; if the longest cell has
+	at least `min_pieces` block pieces, its remaining pieces go into continuation sub-rows.
+	"""
+	from bs4 import BeautifulSoup
+	from markupsafe import Markup
+
+	cells = [str(c or "") for c in cells]
+	best_index, best_pieces = None, []
+	for index, html in enumerate(cells):
+		if "<" not in html:
+			continue
+		# html.parser mis-nests <br/> when the same cell also has an unclosed <br> (as Quill emits)
+		pieces = _split_children(BeautifulSoup(html, "html5lib").body)
+		if len(pieces) >= min_pieces and len(pieces) > len(best_pieces):
+			best_index, best_pieces = index, pieces
+
+	if best_index is None:
+		return [[Markup(c) for c in cells]]
+
+	chunks = [Markup(html) for html, _ in best_pieces]
+	sub_rows = [[Markup(c) for c in cells]]
+	sub_rows[0][best_index] = chunks[0]
+	for chunk in chunks[1:]:
+		sub_row = [None] * len(cells)
+		sub_row[best_index] = chunk
+		sub_rows.append(sub_row)
+	return sub_rows
+
+
 def parse_float_and_unit(input_text, default_unit="px"):
 	if isinstance(input_text, (int, float)):
 		return {"value": input_text, "unit": default_unit}
