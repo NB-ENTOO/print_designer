@@ -342,10 +342,17 @@ const allowDeleteDrop = (ev) => {
 	ev.preventDefault();
 };
 
+const removeDynamicData = (field) => {
+	const dataIndex = MainStore.dynamicData.indexOf(field);
+	if (dataIndex !== -1) {
+		MainStore.dynamicData.splice(dataIndex, 1);
+	}
+};
+
 const handleDeleteClick = () => {
 	if (selectedEl.value) {
-		let el = props.fieldnames.splice(selectedEl.value.index, 1);
-		MainStore.dynamicData.splice(MainStore.dynamicData.indexOf(el), 1);
+		let [field] = props.fieldnames.splice(selectedEl.value.index, 1);
+		removeDynamicData(field);
 		selectedEl.value = null;
 	}
 };
@@ -354,8 +361,8 @@ const deleteField = (ev) => {
 	ev.target.classList.contains("dynamic-field") || ev.target.classList.contains("deleteIcon")
 		? ev.target.classList.remove("dropzone")
 		: ev.target.parentElement.classList.remove("dropzone");
-	let el = props.fieldnames.splice(draggableEl.value, 1);
-	MainStore.dynamicData.splice(MainStore.dynamicData.indexOf(el), 1);
+	let [field] = props.fieldnames.splice(draggableEl.value, 1);
+	removeDynamicData(field);
 	if (draggableEl.value == selectedEl.value?.index) {
 		selectedEl.value = null;
 	}

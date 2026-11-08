@@ -32,21 +32,43 @@ export const fetchMeta = async () => {
 	return;
 };
 
+const missingDoctypes = new Set();
+
 export const getMeta = async (doctype, parentField) => {
 	const MainStore = useMainStore();
 	const parentMetaField = MainStore.metaFields.find((o) => o.fieldname == parentField);
-	if (MainStore.metaFields.find((o) => o.fieldname == parentField)["childfields"]) {
-		return MainStore.metaFields[parentField]["childfields"];
+	if (!parentMetaField || parentMetaField.missing) {
+		return [];
+	}
+	if (parentMetaField.childfields) {
+		return parentMetaField.childfields;
 	}
 	const exculdeFields = ["Section Break", "Column Break", "Tab Break", "HTML"];
 	if (parentMetaField.fieldtype != "Table") {
 		// Remove Link Field
 		exculdeFields.push("Link");
 	}
-	const result = await frappe.xcall(
-		"print_designer.print_designer.page.print_designer.print_designer.get_meta",
-		{ doctype }
-	);
+	let result = null;
+	try {
+		if (
+			!doctype ||
+			missingDoctypes.has(doctype) ||
+			!(await frappe.db.exists("DocType", doctype))
+		) {
+			missingDoctypes.add(doctype);
+		} else {
+			result = await frappe.xcall(
+				"print_designer.print_designer.page.print_designer.print_designer.get_meta",
+				{ doctype }
+			);
+		}
+	} catch (error) {
+		result = null;
+	}
+	if (!result?.fields) {
+		parentMetaField.childfields = [];
+		return [];
+	}
 	let childfields = result.fields.filter((df) => {
 		if (
 			exculdeFields.includes(df.fieldtype) ||
@@ -79,10 +101,17 @@ export const getMeta = async (doctype, parentField) => {
 	return fields;
 };
 export const getValue = async (doctype, name, fieldname) => {
-	const result = await frappe.db.get_value(doctype, name, fieldname);
-
-	const value = await result.message[fieldname];
-	return value;
+	if (!doctype || !name || !fieldname || missingDoctypes.has(doctype)) return null;
+	try {
+		if (!(await frappe.db.exists("DocType", doctype))) {
+			missingDoctypes.add(doctype);
+			return null;
+		}
+		const result = await frappe.db.get_value(doctype, name, fieldname);
+		return result?.message?.[fieldname] ?? null;
+	} catch (error) {
+		return null;
+	}
 };
 
 export const fetchDoc = async (id = null) => {

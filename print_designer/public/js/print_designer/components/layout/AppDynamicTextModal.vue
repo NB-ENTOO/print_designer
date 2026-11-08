@@ -205,6 +205,11 @@ const parentFieldWatcher = watch(
 			let meta = MainStore.metaFields.find(
 				(field) => field.fieldname == previewRef.value.parentField
 			);
+			if (!meta) {
+				doctype.value = "";
+				selectedDoctypeLabel.value = previewRef.value.parentField;
+				return;
+			}
 			selectedDoctypeLabel.value = meta.label || meta.fieldname;
 			if (!meta.childfields) {
 				getMeta(meta.options, previewRef.value.parentField);
@@ -255,6 +260,7 @@ const vFocus = {
 const handleSidebarClick = async (fieldname) => {
 	if (fieldname.length) {
 		let meta = MainStore.metaFields.find((field) => field.fieldname == fieldname);
+		if (!meta) return;
 		selectedDoctypeLabel.value = meta.label || meta.fieldname;
 		if (!meta.childfields) {
 			await getMeta(meta.options, fieldname);

@@ -252,8 +252,17 @@ export const useMainStore = defineStore("MainStore", {
 					let currentField = state.metaFields.find(
 						(field) => field.fieldname === parentField
 					);
-					if (metaFields.indexOf(currentField) == -1) {
+					if (currentField && metaFields.indexOf(currentField) == -1) {
 						metaFields.unshift(currentField);
+					} else if (!currentField) {
+						// Kept so a value copied from another DocType can still be selected and deleted.
+						metaFields.unshift({
+							fieldname: parentField,
+							label: `${parentField} (${__("missing")})`,
+							fieldtype: "Link",
+							options: "",
+							missing: true,
+						});
 					}
 				}
 				return metaFields;
@@ -272,11 +281,14 @@ export const useMainStore = defineStore("MainStore", {
 				let fields = {};
 				let metaFields = state.metaFields;
 				if (selectedParentField) {
-					metaFields = metaFields.find(
-						(e) => e.fieldname === selectedParentField
-					).childfields;
+					metaFields =
+						metaFields.find((e) => e.fieldname === selectedParentField)?.childfields ||
+						[];
 				} else if (selectedTable) {
-					metaFields = selectedTable.childfields;
+					metaFields = selectedTable.childfields || [];
+				}
+				if (!Array.isArray(metaFields)) {
+					metaFields = [];
 				}
 				if (!show_hidden_fields) {
 					metaFields = metaFields.filter((field) => !field["print_hide"]);
